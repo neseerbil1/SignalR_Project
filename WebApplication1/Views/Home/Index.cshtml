@@ -1,0 +1,169 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+
+@section Scripts
+    {
+    <script type="text/javascript">
+
+        $(document).ready(() => {
+
+            var connection = new signalR.HubConnectionBuilder().withAutomaticReconnect([1000, 2000, 3000, 6000]).withUrl("https://localhost:44390/MyHub").build();
+
+            function statusShow() {
+                $("#conStatus").text(connection.connectionState);
+            }
+
+            $("#conStatus").text(connection.connectionState);
+
+            connection.start().then(() => {
+                statusShow();
+                $("#loading").hide();
+                connection.invoke("GetNames");
+            }).catch((err) => { console.log(err) });
+
+            $("#btnSave").click(() => {
+
+                connection.invoke("SendName", $("#txtname").val()).catch((err) => {
+                    console.log(err);
+                })
+            })
+
+            connection.on("ReceiveName", (name) => {
+                /* console.log(name);*/
+                $("#namesList").append(`<li class="list-group-item">${name}</li>`)
+            })
+
+            connection.onreconnecting(err => {
+                $("#loading").show();
+                statusShow();
+                console.log(err);
+            })
+
+            connection.onreconnected(err => {
+                $("#loading").hide();
+                statusShow();
+            })
+
+            connection.onclose(err => {
+                $("#loading").hide();
+                statusShow();
+            })
+
+            connection.on("ReceiveClientCount", (ClientCount) => {
+                $("#clientCount").text(ClientCount);
+            })
+
+            connection.on("Notify", (countText) => {
+                $("#notify").html(`<div class="alert alert-success"${countText}></div>`)
+            })
+
+            connection.on("Error", (errorText) => {
+                alert(errorText);
+            })
+
+            connection.on("ReceiveNames", (names) => {
+                $("#namesList").empty();
+                names.forEach((item, index) => {
+                    $("#namesList").append(`<li class="list-group-item">${item}</li>`)
+                })
+            })
+
+            $("#btnroomname").click(() => {
+                let name = $("#txtname").val();
+                let roomname = $("input[type=radio]:checked").val();
+                if (roomname == null) {
+                    alert("Şehir Seçimi Yapınız");
+                    return;
+                }
+                connection.invoke("SendNameByGroup", name, roomname).catch((err) => {
+                    console.log(err);
+                })
+            })
+
+            connection.on("ReceiveMessageByGroup", (name, roomID) => {
+                let listName;
+                if (roomID == 1)
+                    listName = "AnkaraRoomList";
+                else
+                    listName = "BursaRoomList";
+                $(`#${listName}`).append(`<li class="list-group-item">${name}</li>`)
+            })
+
+            $("input[type=radio]").change(() => {
+                let value = $(`input[type=radio]:checked`).val();
+                if (value == "Ankara") {
+                    connection.invoke("AddToGroup", value);
+                    connection.invoke("RemoveToGroup", "Bursa");
+                }
+                else {
+                    connection.invoke("AddToGroup", value);
+                    connection.invoke("RemoveToGroup", "Ankara");
+                }
+            })
+
+        })
+
+    </script>
+
+}
+
+    <div class="row">
+        <div class="col-md-8 offset-2">
+            <input type="text" class="form-control" id="txtname" />
+            <hr />
+            <button class="btn btn-warning" id="btnSave">İsim Kaydet</button>
+            <button class="btn btn-danger" id="btnroomname">Oda ile ismi Kaydet</button>
+            <div class="alert alert-info mt-2">
+                <div class="float-left">
+                    Bağlantı Durumu:<strong id="conStatus"></strong>
+                    ,Client Sayısı:<strong id="clientCount"></strong>
+                </div>
+                <div class="float-right">
+                    <div id="loading" class="spinner-border" role="status">
+                        <span class="visually-hidden"></span>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+            <div id="#notify"></div>
+        </div>
+        <div class="col-md-8 offset-2">
+            <ul class="list-group" id="namesList"></ul>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 offset-2">
+
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="roomgroup" value="Ankara" />
+                <label class="form-check-label">Ankara Odası</label>
+            </div>
+
+            <div class="form-check-inline">
+                <input class="form-check-input" type="radio" name="roomgroup" value="Bursa" />
+                <label class="form-check-label">Bursa Odası</label>
+            </div>
+
+        </div>
+
+        <div class="col-md-8 offset-2">
+            <div class="row">
+
+                <div class="col-md-6">
+                    <h2>Ankara Odası</h2>
+                    <ul class="list-group" id="AnkaraRoomList"></ul>
+                </div>
+
+                <div class="col-md-6">
+                    <h2>Bursa Odası</h2>
+                    <ul class="list-group" id="BursaRoomList"></ul>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
