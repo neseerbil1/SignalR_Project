@@ -19,6 +19,7 @@ namespace SignalR_Project.Controllers
         [HttpGet("{roomCount}")]
         public async Task<IActionResult> SetRoomCount(int roomCount)
         {
+            MyHub.RoomCount= roomCount; 
             await _hubContext.Clients.All.SendAsync("Notify", $"Bu oda en fazla {roomCount} kişi alabilir");
             return Ok();
         }

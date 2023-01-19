@@ -1,4 +1,4 @@
-﻿namespace WebApplication1.Models
+﻿namespace SignalR_Project.Models
 {
     public class User
     {

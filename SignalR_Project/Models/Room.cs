@@ -1,16 +1,16 @@
 ﻿using System.Collections.Generic;
 
-namespace WebApplication1.Models
+namespace SignalR_Project.Models
 {
     public class Room
     {
         public Room()
         {
-            Users= new List<User>();    
+            Users = new List<User>();
         }
 
         public int RoomID { get; set; }
-        public int RoomName { get; set; }
+        public string RoomName { get; set; }
         public List<User> Users { get; set; }
     }
 }
